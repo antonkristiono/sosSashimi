@@ -2,25 +2,20 @@ import * as React from "react";
 // import { Button, View, Text } from "react-native";
 import {
   Text,
-  Link,
   HStack,
   Center,
-  Heading,
-  Switch,
-  useColorMode,
   NativeBaseProvider,
-  extendTheme,
   VStack,
-  Box,
   Button,
   Image,
 } from "native-base";
 import "react-native-gesture-handler";
-import { View } from "react-native";
+import { View, BackHandler } from "react-native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { NavigationContainer } from "@react-navigation/native";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { Audio } from "expo-av";
+import * as ScreenOrientation from "expo-screen-orientation";
 // import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 function HomeScreen({ navigation }) {
@@ -52,6 +47,21 @@ function HomeScreen({ navigation }) {
       : undefined;
   }, [sound]);
 
+  async function changeScreenOrientation() {
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.LANDSCAPE
+    );
+  }
+
+  function twoFunction() {
+    navigation.navigate("Sos");
+    changeScreenOrientation();
+  }
+
+  // React.useEffect(() => {
+  //   ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+  // }, []);
+
   return (
     <Center bg={"blueGray.900"} px={4} flex={1}>
       <VStack alignItems="center">
@@ -64,11 +74,7 @@ function HomeScreen({ navigation }) {
             pertolongan
           </Text>
         </Text>
-        <Button
-          marginTop={5}
-          borderRadius="full"
-          onPress={() => navigation.navigate("Sos")}
-        >
+        <Button marginTop={5} borderRadius="full" onPress={() => twoFunction()}>
           <Image
             source={require("./assets/1.png")}
             alt="Alternate Text"
@@ -92,10 +98,10 @@ function HomeScreen({ navigation }) {
           color="emerald.50"
           marginTop={6}
           size={"lg"}
-          onPress={stopSound}
+          onPress={() => BackHandler.exitApp()}
         >
           <Text color={"white"} bold>
-            Stop Sirine
+            Keluar
           </Text>
         </Button>
       </VStack>
@@ -104,20 +110,59 @@ function HomeScreen({ navigation }) {
 }
 
 function Sos() {
+  // const [orientationIsLandscape,setOrientation]=React.useState(true)
+  const [sound, setSound] = React.useState();
+
+  async function playSound() {
+    console.log("Loading Sound");
+    const { sound } = await Audio.Sound.createAsync(
+      require("./assets/sirine.mp3")
+    );
+    setSound(sound);
+
+    console.log("Playing Sound");
+    await sound.playAsync();
+  }
+
+  async function changeScreenOrientation() {
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.PORTRAIT
+    );
+  }
+
+  React.useEffect(() => {
+    // changeScreenOrientation()
+    // ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    playSound();
+
+    const stopSound = () => {
+      setSound();
+
+      console.log("Stop Sound");
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      stopSound
+    );
+    return () => backHandler.remove();
+    // return () =>
+    //   BackHandler.removeEventListener("hardwareBackPress", stopSound());
+  }, []);
+
   return (
-    <Center>
-      <View
-        style={{ borderWidth: 1, height: "100%", width: "100%" }}
-      >
+    <Center bg={"blueGray.900"} px={4} flex={1}>
+      <View style={{ borderWidth: 1, height: "100%", width: "100%" }}>
         <Image
           source={require("./assets/sos.gif")}
           alt="sos"
           width="100%"
           height="100%"
           resizeMode="contain"
-          style={{
-            transform: [{ rotate: "90deg" }],
-          }}
+          // style={{
+          //   transform: [{ rotate: "90deg" }],
+          // }}
 
           // marginTop={7}
         />
@@ -127,6 +172,10 @@ function Sos() {
 }
 
 function DetailsScreen() {
+  // </View>
+  // React.useEffect(() => {
+  //   ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+  // }, []);
   return (
     // <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
     //   <Text>Details Screen</Text>
@@ -140,7 +189,7 @@ function DetailsScreen() {
     //     title="Go back to first screen in stack"
     //     onPress={() => navigation.popToTop()}
     //   />
-    // </View>
+
     <Center>
       <View
         style={{ borderWidth: 1, flexShrink: 1, height: "100%", width: "100%" }}
@@ -154,7 +203,7 @@ function DetailsScreen() {
           <Image
             // style={{ width: "100%", height: "100%", resizeMode: "contain" }}
             // source={{ uri: "https://via.placeholder.com/400x200.png" }}
-            source={require("./assets/denah.png")}
+            source={require("./assets/denah-fix.png")}
             alt="Denah"
             width="100%"
             height="100%"
@@ -171,7 +220,12 @@ const Stack = createDrawerNavigator();
 
 function MyDrawer() {
   return (
-    <Stack.Navigator useLegacyImplementation>
+    <Stack.Navigator
+      useLegacyImplementation
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Semilir Map" component={DetailsScreen} />
       <Stack.Screen name="Sos" component={Sos} />
